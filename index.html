@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoWeb OS - Web Demo</title>
+    <script>
+        // System asset URLs separated to prevent layout and domain clipping
+        const FONT_URL = "https://googleapis.com";
+        const WALLPAPER_URL = "";
+        
+        // Dynamic font injection
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = FONT_URL;
+        document.head.appendChild(link);
+    </script>
+    <style>
+        :root {
+            --g-blue: #4285F4;
+            --g-red: #EA4335;
+            --g-yellow: #FBBC05;
+            --g-green: #34A853;
+            --bg-dark: #202124;
+            --win-bg: #303134;
+            --txt-light: #E8EAED;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: 'Roboto', 'Segoe UI', sans-serif;
+            overflow: hidden;
+            background-color: #000;
+            color: var(--txt-light);
+        }
+
+        #boot-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            color: var(--g-green);
+            font-family: monospace;
+            padding: 20px;
+            font-size: 14px;
+            line-height: 1.4;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        #boot-logo {
+            text-align: center;
+            margin-top: 20vh;
+            font-size: 56px;
+            font-weight: 700;
+            display: none;
+            letter-spacing: -1px;
+        }
+
+        #desktop {
+            width: 100%;
+            height: calc(100% - 48px);
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            display: none;
+        }
+
+        .desktop-overlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 90px;
+            font-weight: 700;
+            opacity: 0.12;
+            letter-spacing: -2px;
+            color: #fff;
+        }
+
+        .window {
+            position: absolute;
+            width: 460px;
+            height: 360px;
+            background: var(--win-bg);
+            border-radius: 8px;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #424346;
+            min-width: 280px;
+            min-height: 220px;
+        }
+
+        .window-header {
+            background: #3c4043;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+
+        .window-title {
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .win-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        .win-close { background: var(--g-red); }
+        .win-minimize { background: var(--g-yellow); }
+        .win-maximize { background: var(--g-green); }
+
+        .window-content {
+            flex: 1;
+            padding: 15px;
+            overflow: auto;
+            color: #fff;
+        }
+
+        #taskbar {
+            width: 100%;
+            height: 48px;
+            background: rgba(32, 33, 36, 0.9);
+            backdrop-filter: blur(12px);
+            position: fixed;
+            bottom: 0; left: 0;
+            display: none;
+            align-items: center;
+            padding: 0 15px;
+            justify-content: space-between;
+            z-index: 9000;
+            border-top: 1px solid #3c4043;
+        }
+
+        #start-button {
+            background: var(--g-blue);
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #start-button:hover { background: #1A73E8; }
+
+        .taskbar-center {
+            display: flex;
+            gap: 10px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .task-icon {
+            padding: 6px 12px;
+            background: #3c4043;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 13px;
+            border: 1px solid #4f5256;
+        }
+
+        #clock {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        #start-menu {
+            position: fixed;
+            bottom: 58px; left: 15px; width: 280px;
+            background: var(--bg-dark);
+            border: 1px solid #3c4043;
+            border-radius: 8px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+            display: none;
+            flex-direction: column;
+            z-index: 9500;
+            padding: 8px 0;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .menu-item:hover { background: #303134; }
+
+        .terminal-body {
+            background: #000;
+            font-family: monospace;
+            color: #00ff00;
+            height: 100%;
+            padding: 5px;
+        }
+        .terminal-output { white-space: pre-wrap; margin-bottom: 10px; font-size: 13px; }
+        .terminal-input-line { display: flex; font-size: 13px; }
+        .terminal-prompt { color: var(--g-blue); font-weight: bold; }
+        .terminal-cmd-input {
+            background: transparent; border: none; color: #00ff00;
+            font-family: monospace; flex: 1; outline: none;
+        }
+
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; height: 100%; }
+        #calc-screen {
+            grid-column: span 4; background: #202124; border: none;
+            color: white; text-align: right; padding: 12px; font-size: 22px; border-radius: 4px;
+        }
+        .calc-btn { background: #3c4043; border: none; color: white; font-size: 16px; border-radius: 4px; cursor: pointer; }
+        .calc-btn.op { background: var(--g-yellow); color: #000; }
+        .calc-btn.eq { background: var(--g-green); }
+
+        .game-container { text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+        #game-canvas { background: #121214; width: 100%; height: 210px; position: relative; overflow: hidden; border-radius: 4px; border: 1px solid #3c4043; }
+        #game-ball { width: 12px; height: 12px; background: var(--g-red); border-radius: 50%; position: absolute; top: 20px; left: 50%; }
+        #game-paddle { width: 70px; height: 10px; background: var(--g-blue); position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); border-radius: 3px; }
+        .game-controls-row { display: flex; gap: 8px; margin-top: 5px; }
+
+    </style>
+</head>
+<body>
+
+    <div id="boot-screen">
+        <div id="boot-log"></div>
+        <div id="boot-logo">
+			<span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">W</span><span style="color:#4285F4">e</span><span style="color:#34A853">b</span> <span style="color:#EA4335">O</span><span style="color:#4285F4">S</span>
+			<div style="font-size:14px; color:#9aa0a6; font-weight:normal; margin-top:12px;">Cloud Workstation v1.0.0-prod</div>
+        </div>
+    </div>
+
+    <div id="desktop">
+        <div class="desktop-overlay">GoWeb OS</div>
+    </div>
+
+    <div id="start-menu">
+        <div class="menu-item" onclick="openApp('terminal')">💻 Core Terminal</div>
+        <div class="menu-item" onclick="openApp('calculator')">🧮 G-Calculator</div>
+        <div class="menu-item" onclick="openApp('game')">🎮 G-Arcade Catch</div>
+        <hr style="border-color:#3c4043; margin: 4px 0;">
+        <div class="menu-item" onclick="location.reload()">🔄 Reboot Workspace</div>
+    </div>
+
+    <div id="taskbar">
+        <button id="start-button">🛑 GoStart</button>
+        <div class="taskbar-center" id="taskbar-apps"></div>
+        <!-- Right side status bar / System tray -->
+        <div style="display: flex; align-items: center; gap: 15px; font-size: 13px;">
+            <span title="Network Status" style="color: var(--g-green); cursor: pointer;">⚡ Online</span>
+            <span title="System Resources" style="color: var(--g-blue); cursor: pointer;">📊 CPU: 2%</span>
+            <div id="clock" style="font-weight: 500;">00:00:00</div>
+        </div>
+    </div>
+
+    <script>
+        const bootLog = document.getElementById('boot-log');
+        const bootScreen = document.getElementById('boot-screen');
+        const bootLogo = document.getElementById('boot-logo');
+        const desktop = document.getElementById('desktop');
+        const taskbar = document.getElementById('taskbar');
+        const startBtn = document.getElementById('start-button');
+        const startMenu = document.getElementById('start-menu');
+        const clockEl = document.getElementById('clock');
+        
+        let zIndexCounter = 100;
+
+        desktop.style.background = "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)";
+
+
+        const logs = [
+            "[   0.000000] GoWeb OS Kernel v1.0.0-amd64 (core@goweb.io)",
+            "[   0.042105] BIOS-provided physical RAM map:",
+            "[   0.120491] ACPI: Core revision 20260101",
+            "[   0.450211] CPU0: Intel(R) Core(TM) Google Quantum V2",
+            "[   0.891023] usbcore: registered new interface driver hub",
+            "[   1.214092] Advanced Programmable Interrupt Controller initialized",
+            "[   1.650112] EXT4-fs (sda1): mounted filesystem with ordered data mode",
+            "[   2.102941] GoWeb: Verifying secure environment keys...",
+            "[   2.540192] GoWeb: Access GRANTED. Loading UI Workspace.",
+            "[   3.102391] systemd: Started Graphical Desktop Manager."
+        ];
+
+        // --- BOOT SEQUENCE LOGIC ---
+        let logIndex = 0;
+        function printLog() {
+            if (logIndex < logs.length) {
+                bootLog.innerHTML += logs[logIndex] + "<br>";
+                logIndex++;
+                setTimeout(printLog, Math.random() * 200 + 50);
+            } else {
+                bootLog.style.display = 'none';
+                bootLogo.style.display = 'block';
+                setTimeout(() => {
+                    bootScreen.style.display = 'none';
+                    desktop.style.display = 'block';
+                    taskbar.style.display = 'flex';
+                }, 1500);
+            }
+        }
+        window.onload = printLog;
+
+        // --- TASKBAR CLOCK ---
+        function updateClock() {
+            const now = new Date();
+            // Using standard locale string formatting to prevent array errors
+            clockEl.textContent = now.toLocaleTimeString('en-US', { hour12: false });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- START MENU TOGGLE ---
+        startBtn.onclick = (e) => {
+            e.stopPropagation();
+            startMenu.style.display = startMenu.style.display === 'flex' ? 'none' : 'flex';
+        };
+        document.onclick = () => startMenu.style.display = 'none';
+        startMenu.onclick = (e) => e.stopPropagation();
+
+        // --- APPLICATION MODULES ---
+        const appsConfig = {
+            terminal: {
+                title: "Terminal",
+                init: (contentId) => {
+                    const cont = document.getElementById(contentId);
+                    cont.innerHTML = `
+                        <div class="terminal-body" onclick="document.getElementById('${contentId}-input').focus()">
+                            <div class="terminal-output" id="${contentId}-out">GoWeb Core Terminal\nType 'help' for custom commands.\n\n</div>
+                            <div class="terminal-input-line">
+                                <span class="terminal-prompt">user@goweb:~$&nbsp;</span>
+                                <input type="text" class="terminal-cmd-input" id="${contentId}-input" autofocus>
+                            </div>
+                        </div>
+                    `;
+                    const input = document.getElementById(`${contentId}-input`);
+                    const out = document.getElementById(`${contentId}-out`);
+                    
+                    input.onkeydown = (e) => {
+                        if (e.key === 'Enter') {
+                            const cmd = input.value.trim();
+                            out.innerText += `user@glinux:~$ ${cmd}\n`;
+                            
+                            if (cmd === 'help') {
+                                out.innerText += "Commands: help, ls, cat about.txt, clear, calc, game, goweb\n";
+                            } else if (cmd === 'ls') {
+                                out.innerText += "about.txt   system_logs.log   apps/\n";
+                            } else if (cmd === 'cat about.txt') {
+                                // Define profile URLs locally within the command context
+                                const TG_PROFILE = "https://t.me/stefanias_world";
+                                const GH_PROFILE = "https://github.com/ST3PH-X";
+
+                                out.innerText += 
+                                    "====================================================\n" +
+                                    " __ _____ _____ ____  _   _       _  __\n" +
+                                    "/ _|_   _|___ /|  _ \\| | | |     \\ \\/ /\n" +
+                                    "\\ \\   | |   |_ \\| |_) | |_| |_____\\  / \n" +
+                                    " _) |  | |  ___) |  __/|  _  |_____/  \\ \n" +
+                                    "|___/  |_| |____/|_|   |_| |_|    /_/\\_\\\n" +
+                                    "====================================================\n" +
+                                    " Welcome to ST3PH-X OS Environment v1.0.0 (BBS Style)\n" +
+                                    " Developed by ST3PH-X Lab. All rights reserved.\n" +
+                                    "----------------------------------------------------\n" +
+                                    " System: Autonomous single-file web demonstration\n" +
+                                    " Core: Pure vanilla JS engine / HTML5 Canvas matrix\n" +
+                                    " Status: Online & operational\n" +
+                                    "----------------------------------------------------\n" +
+                                    " CONTACT & PROFILES:\n" +
+                                    " [Telegram] : " + TG_PROFILE + "\n" +
+                                    " [GitHub]   : " + GH_PROFILE + "\n" +
+                                    "====================================================\n";
+							} else if (cmd === 'goweb') {
+									out.innerText += 
+										"GoWeb OS Manifesto:\n" +
+										"Breaking the boundaries of traditional web interfaces.\n" +
+										"This project demonstrates that an entire operating system workspace\n" +
+										"can be engineered flawlessly inside a single, zero-dependency file.\n" +
+										"Powered by clean code. Driven by ST3PH-X.\n";
+							} else if (cmd === 'clear') {
+                                out.innerText = "";
+                            } else if (cmd === 'calc') {
+                                openApp('calculator');
+                                out.innerText += "Launching Calculator...\n";
+                            } else if (cmd === 'game') {
+                                openApp('game');
+                                out.innerText += "Launching Stack Tower...\n";
+                            } else if (cmd !== "") {
+                                out.innerText += `bash: ${cmd}: command not found\n`;
+                            }
+                            input.value = "";
+                            cont.scrollTop = cont.scrollHeight;
+                        }
+                    };
+                }
+            },
+            calculator: {
+                title: "Calculator",
+                init: (contentId) => {
+                    const cont = document.getElementById(contentId);
+                    cont.innerHTML = `
+                        <div class="calc-grid">
+                            <input type="text" id="${contentId}-screen" readonly value="0">
+                            <button class="calc-btn op" onclick="window.calcClear('${contentId}')">C</button>
+                            <button class="calc-btn op" onclick="window.calcOp('${contentId}','/')">/</button>
+                            <button class="calc-btn op" onclick="window.calcOp('${contentId}','*')">*</button>
+                            <button class="calc-btn op" onclick="window.calcOp('${contentId}','-')">-</button>
+                            <button class="calc-btn" onclick="window.calcNum('${contentId}','7')">7</button>
+                            <button class="calc-btn" onclick="window.calcNum('${contentId}','8')">8</button>
+                            <button class="calc-btn" onclick="window.calcNum('${contentId}','9')">9</button>
+                            <button class="calc-btn op" onclick="window.calcOp('${contentId}','+')">+</button>
+                            <button class="calc-btn" onclick="window.calcNum('${contentId}','4')">4</button>
+                            <button class="calc-btn" onclick="window.calcNum('${contentId}','5')">5</button>
+                            <button class="calc-btn" onclick="window.calcNum('${contentId}','6')">6</button>
+                            <button class="calc-btn eq" style="grid-row: span 3; height:100%" onclick="window.calcEval('${contentId}')">=</button>
+                            <button class="calc-btn" onclick="window.calcNum('${contentId}','1')">1</button>
+                            <button class="calc-btn" onclick="window.calcNum('${contentId}','2')">2</button>
+                            <button class="calc-btn" onclick="window.calcNum('${contentId}','3')">3</button>
+                            <button class="calc-btn" style="grid-column: span 3;" onclick="window.calcNum('${contentId}','0')">0</button>
+                        </div>
+                    `;
+                }
+            },
+            game: {
+                title: "G-Arcade Catch",
+                init: (contentId) => {
+                    const cont = document.getElementById(contentId);
+                    // Using HTML5 Canvas to guarantee physics synchronization
+                    cont.innerHTML = `
+                        <div class="game-container">
+                            <div style="font-size:13px; display:flex; justify-content:space-between; padding:2px 5px; background:#1e1f22;">
+                                <span>Score: <b id="${contentId}-score">0</b></span>
+                                <span id="${contentId}-status" style="color:var(--g-yellow)">PLAYING</span>
+                            </div>
+                            <canvas id="${contentId}-cvs" width="410" height="200" style="background:#121214; display:block; border-radius:4px; border:1px solid #3c4043;"></canvas>
+                            <div class="game-controls-row">
+                                <button class="calc-btn" style="flex:1; padding:8px;" id="${contentId}-btn-l">◀ LEFT</button>
+                                <button class="calc-btn" style="flex:1; padding:8px;" id="${contentId}-btn-r">RIGHT ▶</button>
+                            </div>
+                        </div>
+                    `;
+
+                    setTimeout(() => {
+                        const canvas = document.getElementById(`${contentId}-cvs`);
+                        if (!canvas) return;
+                        const ctx = canvas.getContext('2d');
+                        const scoreEl = document.getElementById(`${contentId}-score`);
+                        const statusEl = document.getElementById(`${contentId}-status`);
+                        
+                        let score = 0;
+                        let paddleW = 70, paddleH = 10;
+                        let paddleX = (canvas.width - paddleW) / 2;
+                        let ballX = canvas.width / 2, ballY = 30;
+                        let dx = 3, dy = 3, ballRadius = 6;
+
+                        // Canvas render loop
+                        function draw() {
+                            if (!document.getElementById(`${contentId}-cvs`)) {
+                                clearInterval(window[`game_interval_${contentId}`]);
+                                return;
+                            }
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            
+                            // Draw Ball
+                            ctx.beginPath();
+                            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI*2);
+                            ctx.fillStyle = "#EA4335";
+                            ctx.fill();
+                            ctx.closePath();
+                            
+                            // Draw Paddle
+                            ctx.beginPath();
+                            ctx.rect(paddleX, canvas.height - paddleH - 5, paddleW, paddleH);
+                            ctx.fillStyle = "#4285F4";
+                            ctx.fill();
+                            ctx.closePath();
+                            
+                            // Wall hits
+                            if(ballX + dx > canvas.width - ballRadius || ballX + dx < ballRadius) dx = -dx;
+                            if(ballY + dy < ballRadius) dy = -dy;
+                            
+                            // Paddle hits
+                            if(ballY + dy > canvas.height - paddleH - 10) {
+                                if(ballX > paddleX && ballX < paddleX + paddleW) {
+                                    dy = -Math.abs(dy);
+                                    score++;
+                                    scoreEl.innerText = score;
+                                } else if(ballY + dy > canvas.height - ballRadius) {
+                                    // Game over trigger
+                                    statusEl.innerText = "GAME OVER";
+                                    statusEl.style.color = "#EA4335";
+                                    ballX = canvas.width / 2; ballY = 30; dy = 3; dx = 3;
+                                    score = 0; scoreEl.innerText = "0";
+                                    setTimeout(() => { if(statusEl) { statusEl.innerText = "PLAYING"; statusEl.style.color = "var(--g-yellow)"; } }, 1200);
+                                }
+                            }
+                            
+                            ballX += dx; ballY += dy;
+                        }
+
+                        window[`game_interval_${contentId}`] = setInterval(draw, 1000 / 40);
+
+                        // Direct button listeners to avoid scope leaking
+                        document.getElementById(`${contentId}-btn-l`).onclick = () => {
+                            paddleX -= 30; if(paddleX < 0) paddleX = 0;
+                        };
+                        document.getElementById(`${contentId}-btn-r`).onclick = () => {
+                            paddleX += 30; if(paddleX > canvas.width - paddleW) paddleX = canvas.width - paddleW;
+                        };
+                    }, 80);
+                }
+            }
+
+      };
+        // --- GLOBAL APP HELPERS ---
+        window.calcNum = (id, n) => {
+            const s = document.getElementById(`${id}-screen`);
+            if(s.value === "0" || s.value === "Error") s.value = n; else s.value += n;
+        };
+        window.calcOp = (id, op) => { document.getElementById(`${id}-screen`).value += op; };
+        window.calcClear = (id) => { document.getElementById(`${id}-screen`).value = "0"; };
+        window.calcEval = (id) => {
+            const s = document.getElementById(`${id}-screen`);
+            try { s.value = eval(s.value); } catch { s.value = "Error"; }
+        };
+
+        window.dropBlock = (id) => {
+            const scoreEl = document.getElementById(`${id}-score`);
+            const canvas = document.getElementById(`${id}-canvas`);
+            const block = document.getElementById(`${id}-block`);
+            let currentScore = parseInt(scoreEl.innerText);
+            
+            let floor = document.createElement('div');
+            floor.className = 'tower-floor';
+            floor.style.bottom = (currentScore * 20) + 'px';
+            floor.style.left = block.style.left;
+            floor.style.width = '60px';
+            canvas.appendChild(floor);
+
+            scoreEl.innerText = currentScore + 1;
+            
+            if(currentScore * 20 > 150) {
+                canvas.querySelectorAll('.tower-floor').forEach(el => {
+                    el.style.bottom = (parseInt(el.style.bottom) - 20) + 'px';
+                });
+            }
+        };
+
+        // --- WINDOW MANAGER (DRAG, RESIZE, CAPTURE) ---
+        window.openApp = function(appKey) {
+            startMenu.style.display = 'none';
+            const appId = 'app-' + appKey + '-' + Math.floor(Math.random()*1000);
+            const config = appsConfig[appKey];
+
+            const win = document.createElement('div');
+            win.className = 'window';
+            win.id = appId;
+            win.style.top = (80 + (zIndexCounter % 10) * 15) + 'px';
+            win.style.left = (80 + (zIndexCounter % 10) * 15) + 'px';
+            win.style.zIndex = ++zIndexCounter;
+
+            win.innerHTML = `
+                <div class="window-header" onmousedown="dragStart(event, '${appId}')">
+                    <div class="window-title">⚙️ ${config.title}</div>
+                    <div class="window-controls">
+                        <button class="win-btn win-minimize" onclick="minimizeWin('${appId}')"></button>
+                        <button class="win-btn win-maximize" onclick="maximizeWin('${appId}')"></button>
+                        <button class="win-btn win-close" onclick="closeWin('${appId}')"></button>
+                    </div>
+                </div>
+                <div class="window-content" id="${appId}-content"></div>
+            `;
+
+            desktop.appendChild(win);
+            config.init(`${appId}-content`);
+            addIconToTaskbar(appId, config.title);
+
+            win.addEventListener('mousedown', () => {
+                win.style.zIndex = ++zIndexCounter;
+            });
+        }
+
+        function addIconToTaskbar(id, title) {
+            const bar = document.getElementById('taskbar-apps');
+            const icon = document.createElement('div');
+            icon.className = 'task-icon';
+            icon.id = 'icon-' + id;
+            icon.innerText = title;
+            icon.onclick = () => {
+                const el = document.getElementById(id);
+                if (el.style.display === 'none') {
+                    el.style.display = 'flex';
+                    el.style.zIndex = ++zIndexCounter;
+                } else {
+                    el.style.display = 'none';
+                }
+            };
+            bar.appendChild(icon);
+        }
+
+        window.closeWin = function(id) {
+            document.getElementById(id).remove();
+            document.getElementById('icon-' + id).remove();
+            if(window[`game_interval_${id}-content`]) clearInterval(window[`game_interval_${id}-content`]);
+        }
+
+        window.minimizeWin = function(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        window.maximizeWin = function(id) {
+            const el = document.getElementById(id);
+            if (el.style.width === '100%') {
+                el.style.width = '460px'; el.style.height = '360px';
+                el.style.top = '100px'; el.style.left = '100px';
+            } else {
+                el.style.width = '100%'; el.style.height = '100%';
+                el.style.top = '0'; el.style.left = '0';
+            }
+        }
+
+        // --- DRAG AND DROP BASIC CORE ---
+        let activeWin = null;
+        let offsetX, offsetY;
+
+        window.dragStart = function(e, id) {
+            if(e.target.classList.contains('win-btn')) return;
+            activeWin = document.getElementById(id);
+            activeWin.style.zIndex = ++zIndexCounter;
+            offsetX = e.clientX - activeWin.offsetLeft;
+            offsetY = e.clientY - activeWin.offsetTop;
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('mouseup', dragEnd);
+        }
+
+        function dragMove(e) {
+            if (!activeWin) return;
+            let x = e.clientX - offsetX;
+            let y = e.clientY - offsetY;
+            if(y < 0) y = 0;
+            activeWin.style.left = x + 'px';
+            activeWin.style.top = y + 'px';
+        }
+
+        function dragEnd() {
+            activeWin = null;
+            document.removeEventListener('mousemove', dragMove);
+            document.removeEventListener('mouseup', dragEnd);
+        }
+    </script>
+</body>
+</html>
