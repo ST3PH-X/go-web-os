@@ -1,5 +1,7 @@
 # GoWeb OS: Standalone Web Workspace Prototype
 
+### 🔗 [Live Demonstration Deployment](https://st3ph-x.github.io/go-web-os/)
+
 An architectural proof-of-concept demonstrating a lightweight, sandboxed, multi-window desktop environment engineered entirely inside a single, zero-dependency HTML5/Vanilla JS file. 
 
 By eliminating the overhead of modern monolithic frontend frameworks, **GoWeb OS** achieves near-zero latency, execution immutability, and absolute predictable resource allocation.
