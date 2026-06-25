@@ -1,5 +1,25 @@
 # GoWeb OS: Standalone Web Workspace Prototype
 
+---
+
+> ### 🧠 ARCHITECTURAL MANIFESTO
+>
+> You won't find bloated Object-Oriented Programming (OOP), heavy class hierarchies, or endless abstraction layers here. 
+>
+> **GoWeb OS** is built with a strict adherence to the functional and procedural traditions of Dennis Ritchie and Brian Kernighan. Just as the original Unix kernels and the X Window System (X11) were crafted in pure C to feel the hardware directly, this Web OS treats JavaScript as its spiritual descendant — relying on clean, modular, and predictable functional design.
+>
+> #### Why this matters for Open Source & Security:
+> * **Zero Abstraction Overhead:** The code is flat, fast, and does exactly what it says on the tin. No hidden "gorilla holding a banana" OOP side effects.
+> * **Ultimate Modularity:** Every subsystem operates like a classic Unix utility — doing one thing well.
+> * **Low Barrier to Contribute:** You don't need to study a massive class inheritance tree to add a feature. Write a clean function, pipe the data, and build your module. 
+> 
+> *This isn’t a modern web framework experiment. It’s an engineering tribute to the software foundations that built the digital world.*
+>
+> — **ST3PH-X**
+
+---
+
+
 ### 🔗 [Live Demonstration Deployment](https://st3ph-x.github.io/go-web-os/)
 
 An architectural proof-of-concept demonstrating a lightweight, sandboxed, multi-window desktop environment engineered entirely inside a single, zero-dependency HTML5/Vanilla JS file. 
